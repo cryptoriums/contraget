@@ -150,11 +150,11 @@ func GenerateABI(folder, filename string, abis []string) error {
 	return nil
 }
 
-func GeneratePackage(pkgFolder, pkgName string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string) error {
+func GeneratePackage(pkgFolder, pkgName string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, aliases map[string]string) error {
 
-	code, err := bind.Bind(types, abis, bins, sigs, pkgName, bind.LangGo, libs, map[string]string{})
+	code, err := bind.Bind(types, abis, bins, sigs, pkgName, bind.LangGo, libs, aliases)
 	if err != nil {
-		return errors.Wrapf(err, "generates the Go wrapper:%v", pkgName)
+		return errors.Wrapf(err, "generate the Go wrapper:%v", pkgName)
 	}
 	pkgFolderName := filepath.Join(pkgFolder, pkgName)
 

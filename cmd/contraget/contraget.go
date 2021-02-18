@@ -22,6 +22,7 @@ var cli struct {
 	DownloadDst string            `optional:"" type:"string" help:"the destination folder for the downloaded contract"`
 	AbiDst      string            `optional:"" type:"string" help:"the destination folder for the abi generation"`
 	PkgDst      string            `optional:"" type:"string" help:"the destination folder for the golang binding package"`
+	PkgAliases  map[string]string `optional:"" type:"string:string" help:"alias for pgk bindings to use when there is a collision in the normalized names"`
 }
 
 func networkDecoder() kong.MapperFunc {
@@ -57,7 +58,7 @@ func main() {
 		types, abis, bins, sigs, libs, err := contraget.GetContractObjects(filePaths)
 		ExitOnErr(err, "get contracts object")
 
-		err = contraget.GeneratePackage(cli.PkgDst, cli.Name, types, abis, bins, sigs, libs)
+		err = contraget.GeneratePackage(cli.PkgDst, cli.Name, types, abis, bins, sigs, libs, cli.PkgAliases)
 		ExitOnErr(err, "generate GO binding")
 
 		log.Println("generated GO binding:", filepath.Join(cli.PkgDst, cli.Name))
