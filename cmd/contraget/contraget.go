@@ -69,7 +69,7 @@ func main() {
 		ExitOnErr(err, "get contracts object")
 		err = contraget.GenerateABI(cli.AbiDst, cli.Name, abis)
 		ExitOnErr(err, "generate ABI")
-		log.Println("Saved ABI:", filepath.Join(downloadFolder, cli.Name))
+		log.Println("Saved ABI:", filepath.Join(cli.AbiDst, cli.Name))
 	}
 
 }
