@@ -142,6 +142,10 @@ func GenerateABI(folder, filename string, abis []string) error {
 	a = append([]byte(`[`), a...)
 	a = append(a, []byte("]")...)
 
+	if err := os.MkdirAll(folder, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "create destination folder:%v", folder)
+	}
+
 	fpath := filepath.Join(folder, filename+".json")
 	if err := ioutil.WriteFile(fpath, a, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "write file:%v", fpath)
