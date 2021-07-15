@@ -8,4 +8,4 @@
  - Generate golang bindings
 
 ## Initial Author
-[@krasi-georgiev](https://github.com/krasi-georgiev/) as part of the Tellor team - the only fully decentralized oracle.
+[@krasi-georgiev](https://github.com/krasi-georgiev/) as part of the Tellor team.
