@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var cli struct {
+type cli struct {
 	Addr        string            `required:"" type:"string" help:"the contract address"`
 	Network     etherscan.Network `default:"rinkeby" help:"the contract address"`
 	Name        string            `required:"" type:"string" help:"the cli.Name for the downloaded contract"`
@@ -46,36 +46,38 @@ func networkDecoder() kong.MapperFunc {
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile | log.Lmsgprefix)
 
-	_ = kong.Parse(&cli, kong.UsageOnError(), kong.TypeMapper(reflect.TypeOf(etherscan.Network("")), networkDecoder()))
+	cli := &cli{}
+
+	_ = kong.Parse(cli, kong.UsageOnError(), kong.TypeMapper(reflect.TypeOf(etherscan.Network("")), networkDecoder()))
 
 	downloadFolder := filepath.Join(cli.DownloadDst, cli.Name)
 
 	filePaths, err := contraget.DownloadContracts(cli.Network, cli.Addr, downloadFolder, cli.Name)
-	ExitOnErr(err, "download contracts")
+	cli.ExitOnErr(err, "download contracts")
 	log.Printf("Downloaded contract:%+v", downloadFolder)
 
 	if cli.PkgDst != "" {
 		types, abis, bins, sigs, libs, err := contraget.GetContractObjects(filePaths)
-		ExitOnErr(err, "get contracts object")
+		cli.ExitOnErr(err, "get contracts object")
 
 		err = contraget.GeneratePackage(cli.PkgDst, cli.Name, types, abis, bins, sigs, libs, cli.PkgAliases)
-		ExitOnErr(err, "generate GO binding")
+		cli.ExitOnErr(err, "generate GO binding")
 
 		log.Println("generated GO binding:", filepath.Join(cli.PkgDst, cli.Name))
 	}
 
 	if cli.AbiDst != "" {
 		_, abis, _, _, _, err := contraget.GetContractObjects(filePaths)
-		ExitOnErr(err, "get contracts object")
+		cli.ExitOnErr(err, "get contracts object")
 		err = contraget.GenerateABI(cli.AbiDst, cli.Name, abis)
-		ExitOnErr(err, "generate ABI")
+		cli.ExitOnErr(err, "generate ABI")
 		log.Println("Saved ABI:", filepath.Join(cli.AbiDst, cli.Name))
 	}
 
 }
 
-func ExitOnErr(err error, msg string) {
+func (self *cli) ExitOnErr(err error, msg string) {
 	if err != nil {
-		stdlog.Fatalf("root execution error:%+v msg:%+v", err, msg)
+		stdlog.Fatalf("root execution name:%v, error:%+v msg:%+v", self.Name, err, msg)
 	}
 }
