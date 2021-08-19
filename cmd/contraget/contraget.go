@@ -36,6 +36,8 @@ func networkDecoder() kong.MapperFunc {
 			target.Set(reflect.ValueOf(etherscan.Rinkby))
 		case "mainnet":
 			target.Set(reflect.ValueOf(etherscan.Mainnet))
+		case "goerli":
+			target.Set(reflect.ValueOf(etherscan.Goerli))
 		default:
 			return errors.Errorf("unrecognized network cli.Name:%v", value)
 		}
