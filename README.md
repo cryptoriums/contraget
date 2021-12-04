@@ -8,9 +8,15 @@
  - Generate golang bindings
 
 ## Example
+
+download from etherscan
 ```
-go run cmd/contraget/contraget.go --addr=0x34319564f00C924dA8fB52fD8bA6edBfd1FfEdA8 --download-dst=tmp --pkg-dst=pkg/contracts --network=goerli --name=tellorTest
+go run cmd/contraget/contraget.go --path=0x34319564f00C924dA8fB52fD8bA6edBfd1FfEdA8 --download-dst=tmp --pkg-dst=pkg/contracts --network=goerli --name=tellorTest
+```
+generate from a local contract
+```
+go run cmd/contraget/contraget.go --path=testing/contract.sol --pkg-dst=pkg/contracts --name=test
 ```
 
-## Initial Author
-[@krasi-georgiev](https://github.com/krasi-georgiev/) as part of the Tellor team.
+## Author
+[@krasi-georgiev](https://github.com/krasi-georgiev/).

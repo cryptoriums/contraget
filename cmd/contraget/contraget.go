@@ -6,17 +6,20 @@ package main
 import (
 	"log"
 	stdlog "log"
+	"os"
 	"path/filepath"
 	"reflect"
 
 	"github.com/alecthomas/kong"
 	"github.com/cryptoriums/contraget/pkg/contraget"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/pkg/errors"
 )
 
 type cli struct {
-	Addr        string            `required:"" type:"string" help:"the contract address"`
+	Path        string            `required:"" type:"string" help:"the contract address or local file path"`
+	SolcVersion string            `default:"v0.8.10" type:"string" help:"the contract compiler version"`
 	Network     etherscan.Network `default:"rinkeby" help:"the contract address"`
 	Name        string            `required:"" type:"string" help:"the cli.Name for the downloaded contract"`
 	DownloadDst string            `optional:"" type:"string" help:"the destination folder for the downloaded contract"`
@@ -52,11 +55,21 @@ func main() {
 
 	_ = kong.Parse(cli, kong.UsageOnError(), kong.TypeMapper(reflect.TypeOf(etherscan.Network("")), networkDecoder()))
 
-	downloadFolder := filepath.Join(cli.DownloadDst, cli.Name)
+	filePaths := map[string]string{
+		cli.Path: cli.SolcVersion,
+	}
 
-	filePaths, err := contraget.DownloadContracts(cli.Network, cli.Addr, downloadFolder, cli.Name)
-	cli.ExitOnErr(err, "download contracts")
-	log.Printf("Downloaded contract:%+v", downloadFolder)
+	_, err := os.Stat(cli.Path)
+	if err != nil {
+		if !common.IsHexAddress(cli.Path) {
+			cli.ExitOnErr(errors.New("contact path is not a hex string"), "")
+		}
+		downloadFolder := filepath.Join(cli.DownloadDst, cli.Name)
+
+		filePaths, err = contraget.DownloadContracts(cli.Network, cli.Path, downloadFolder, cli.Name)
+		cli.ExitOnErr(err, "download contracts")
+		log.Printf("Downloaded contract:%+v", downloadFolder)
+	}
 
 	if cli.PkgDst != "" {
 		types, abis, bins, sigs, libs, err := contraget.GetContractObjects(filePaths)
