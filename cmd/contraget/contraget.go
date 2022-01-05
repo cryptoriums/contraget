@@ -20,7 +20,7 @@ import (
 type cli struct {
 	Path        string            `required:"" type:"string" help:"the contract address or local file path"`
 	SolcVersion string            `default:"v0.8.10" type:"string" help:"the contract compiler version"`
-	Network     etherscan.Network `default:"rinkeby" help:"the contract address"`
+	Network     etherscan.Network `default:"rinkeby" help:"the network to connect to"`
 	Name        string            `required:"" type:"string" help:"the cli.Name for the downloaded contract"`
 	DownloadDst string            `optional:"" type:"string" help:"the destination folder for the downloaded contract"`
 	AbiDst      string            `optional:"" type:"string" help:"the destination folder for the abi generation"`
@@ -58,7 +58,6 @@ func main() {
 	filePaths := map[string]string{
 		cli.Path: cli.SolcVersion,
 	}
-
 	_, err := os.Stat(cli.Path)
 	if err != nil {
 		if !common.IsHexAddress(cli.Path) {
