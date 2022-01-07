@@ -82,12 +82,8 @@ func write(filePath, content string) (errFinal error) {
 		// Flatten the import subtree.
 		// Rewrite the imports to remove all parent folder.
 		if strings.HasPrefix(line, "import") {
-			t := strings.SplitN(line, "\"", 3)
-			if len(t) == 3 {
-				line = t[0] + "\"./" + filepath.Base(t[1]) + "\"" + t[2]
-			} else {
-				line = t[0]
-			}
+			last := strings.LastIndex(line, "/")
+			line = "import \"./" + line[last+1:len(line)-2] + "\";"
 		}
 		line += "\n"
 		if _, err := w.Write([]byte(line)); err != nil {
