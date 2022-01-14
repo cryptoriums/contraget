@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -209,7 +210,18 @@ func downloadSolc(solcVersion string) (string, error) {
 	solcPath := filepath.Join(solcDir, solcVersion)
 	if _, err := os.Stat(solcPath); os.IsNotExist(err) {
 		log.Println("downloading solc version", solcVersion)
-		err = downloadFile(solcPath, fmt.Sprintf("https://github.com/ethereum/solidity/releases/download/%s/solc-static-linux", solcVersion))
+
+		srcFile := ""
+		switch runtime.GOOS {
+		case "darwin":
+			srcFile = "solc-macos"
+		case "linux":
+			srcFile = "solc-static-linux"
+		default:
+			return "", errors.Errorf("unsuported OS:%v", runtime.GOOS)
+		}
+
+		err = downloadFile(solcPath, fmt.Sprintf("https://github.com/ethereum/solidity/releases/download/%s/"+srcFile, solcVersion))
 		if err != nil {
 			return "", err
 		}
