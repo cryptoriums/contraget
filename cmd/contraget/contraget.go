@@ -87,6 +87,8 @@ func main() {
 		cli.ExitOnErr(err, "generate GO binding")
 
 		log.Println("generated GO binding:", filepath.Join(cli.PkgDst, cli.Name))
+	} else {
+		log.Println("no package destination set so skipping binding generation")
 	}
 
 	if cli.AbiDst != "" {
