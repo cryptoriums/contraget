@@ -74,6 +74,10 @@ func main() {
 			cli.ExitOnErr(err, "get contracts compiler version")
 			log.Printf("compiler version not specified so inferred from the contract version:%v", compilerVer)
 		}
+
+		if compilerVer[0:1] != "v" {
+			compilerVer = "v" + compilerVer
+		}
 		filePaths = map[string]string{
 			cli.Path: compilerVer,
 		}

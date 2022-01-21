@@ -189,6 +189,10 @@ func downloadFile(filepath string, url string) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("downloading solc returned unexpected status code:%v", resp.StatusCode)
+	}
+
 	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {

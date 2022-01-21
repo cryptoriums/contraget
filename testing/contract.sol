@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-09-15
- */
-
 pragma solidity 0.8.10;
 
 contract SimpleStorage {
