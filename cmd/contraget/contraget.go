@@ -59,6 +59,7 @@ func main() {
 	var filePaths map[string]string
 	_, err := os.Stat(cli.Path)
 	if err != nil {
+		log.Printf("path not found so trying from etherscan:%v", cli.Path)
 		if !common.IsHexAddress(cli.Path) {
 			cli.ExitOnErr(errors.New("contract path is not a hex string"), "")
 		}
