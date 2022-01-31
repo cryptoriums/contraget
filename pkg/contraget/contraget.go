@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -31,8 +32,11 @@ func DownloadContracts(network etherscan.Network, address string, dstFolder, nam
 		return nil, errors.Wrap(err, "get contract source")
 	}
 
-	if _, err := os.Stat(dstFolder); !os.IsNotExist(err) {
-		os.RemoveAll(dstFolder)
+	name = strings.Title(name)
+	dstPath := path.Join(dstFolder, name)
+
+	if _, err := os.Stat(dstPath); !os.IsNotExist(err) {
+		os.RemoveAll(dstPath)
 	}
 	if err := os.MkdirAll(dstFolder, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "create download folder:%v", dstFolder)

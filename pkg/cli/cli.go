@@ -31,13 +31,12 @@ func Run(cli *Cli) error {
 		if !common.IsHexAddress(cli.Path) {
 			return errors.New("contract path is not a hex string")
 		}
-		downloadFolder := filepath.Join(cli.DownloadDst, cli.Name)
 
-		filePaths, err = contraget.DownloadContracts(cli.Network, cli.Path, downloadFolder, cli.Name)
+		filePaths, err = contraget.DownloadContracts(cli.Network, cli.Path, cli.DownloadDst, cli.Name)
 		if err != nil {
 			return errors.Wrap(err, "download contracts")
 		}
-		log.Printf("Downloaded contract:%+v", downloadFolder)
+		log.Printf("Downloaded contractX:%+v", filepath.Join(cli.DownloadDst, cli.Name))
 	} else {
 		compilerVer := cli.SolcVersion
 		if compilerVer == "" {

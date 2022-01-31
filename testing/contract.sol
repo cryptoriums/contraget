@@ -13,3 +13,9 @@ contract SimpleStorage {
         return ipfsHash;
     }
 }
+
+contract MoreSimpleStorage {
+    function get() public view returns (string memory) {
+        return "xxxx";
+    }
+}
