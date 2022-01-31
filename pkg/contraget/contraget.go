@@ -98,7 +98,7 @@ func write(filePath, content string) (errFinal error) {
 	return nil
 }
 
-func GetContractObjects(contractFiles map[string]string) (abis []string, types []string, bins []string, sigs []map[string]string, libs map[string]string, err error) {
+func GetContractObjects(contractFiles map[string]string) (types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, err error) {
 	libs = make(map[string]string)
 	for contractPath, solcVersion := range contractFiles {
 		solcPath, err := downloadSolc(solcVersion)
@@ -130,7 +130,7 @@ func GetContractObjects(contractFiles map[string]string) (abis []string, types [
 	return types, abis, bins, sigs, libs, nil
 }
 
-func GenerateABI(folder, filename string, abis []string) error {
+func ExportABI(folder, filename string, abis []string) error {
 	var a []byte
 	for _, abi := range abis {
 		if len(abi) > 2 {
@@ -155,7 +155,17 @@ func GenerateABI(folder, filename string, abis []string) error {
 	return nil
 }
 
-func GeneratePackage(pkgFolder, pkgName string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, aliases map[string]string) error {
+func ExportBin(folder string, types, bins []string) error {
+	for i, t := range types {
+		fpath := filepath.Join(folder, t+".bin")
+		if err := ioutil.WriteFile(fpath, []byte(bins[i]), os.ModePerm); err != nil {
+			return errors.Wrapf(err, "write file:%v", fpath)
+		}
+	}
+	return nil
+}
+
+func ExportPackage(pkgFolder, pkgName string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, aliases map[string]string) error {
 
 	code, err := bind.Bind(types, abis, bins, sigs, pkgName, bind.LangGo, libs, aliases)
 	if err != nil {
