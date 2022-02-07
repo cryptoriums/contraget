@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -54,11 +55,19 @@ func DownloadContracts(network etherscan.Network, address string, dstFolder, nam
 			contractFiles[filePath] = strings.Split(rep[0].CompilerVersion, "+")[0]
 		}
 	} else {
-		filePath := filepath.Join(dstFolder, name+".sol")
-		if err := write(filePath, rep[0].SourceCode); err != nil {
-			return nil, err
+		if strings.Contains(rep[0].CompilerVersion, "vyper") {
+			filePath := filepath.Join(dstFolder, name+".vy")
+			if err := write(filePath, rep[0].SourceCode); err != nil {
+				return nil, err
+			}
+			contractFiles[filePath] = "v" + strings.Split(rep[0].CompilerVersion, ":")[1]
+		} else {
+			filePath := filepath.Join(dstFolder, name+".sol")
+			if err := write(filePath, rep[0].SourceCode); err != nil {
+				return nil, err
+			}
+			contractFiles[filePath] = strings.Split(rep[0].CompilerVersion, "+")[0]
 		}
-		contractFiles[filePath] = strings.Split(rep[0].CompilerVersion, "+")[0]
 	}
 
 	return contractFiles, nil
@@ -104,14 +113,37 @@ func write(filePath, content string) (errFinal error) {
 
 func GetContractObjects(contractFiles map[string]string) (types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, err error) {
 	libs = make(map[string]string)
-	for contractPath, solcVersion := range contractFiles {
-		solcPath, err := downloadSolc(solcVersion)
-		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrap(err, "download solc")
-		}
-		contracts, err := compiler.CompileSolidity(solcPath, contractPath)
-		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrap(err, "build Solidity contract")
+	for contractPath, compilerVersion := range contractFiles {
+		var contracts map[string]*compiler.Contract
+		if filepath.Ext(contractPath) == ".sol" {
+			compilerPath, err := downloadSolc(compilerVersion)
+			if err != nil {
+				return nil, nil, nil, nil, nil, errors.Wrap(err, "download solc")
+			}
+			contracts, err = compiler.CompileSolidity(compilerPath, contractPath)
+			if err != nil {
+				return nil, nil, nil, nil, nil, errors.Wrap(err, "build Solidity contract")
+			}
+		} else {
+			compilerPath, err := downloadVyper(compilerVersion)
+			if err != nil {
+				return nil, nil, nil, nil, nil, errors.Wrap(err, "download solc")
+			}
+			output, err := compiler.CompileVyper(compilerPath, contractPath)
+			if err != nil {
+				return nil, nil, nil, nil, nil, errors.Wrap(err, "build Vyper contract")
+			}
+			contracts = make(map[string]*compiler.Contract)
+			for n, contract := range output {
+				name := n
+				// Sanitize the combined json names to match the
+				// format expected by solidity.
+				if !strings.Contains(n, ":") {
+					// Remove extra path components
+					name = abi.ToCamelCase(strings.TrimSuffix(filepath.Base(name), ".vy"))
+				}
+				contracts[name] = contract
+			}
 		}
 
 		for name, contract := range contracts {
@@ -170,7 +202,6 @@ func ExportBin(folder string, types, bins []string) error {
 }
 
 func ExportPackage(pkgFolder, pkgName string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, aliases map[string]string) error {
-
 	code, err := bind.Bind(types, abis, bins, sigs, pkgName, bind.LangGo, libs, aliases)
 	if err != nil {
 		return errors.Wrapf(err, "generate the Go wrapper:%v", pkgName)
@@ -195,7 +226,6 @@ func ExportPackage(pkgFolder, pkgName string, types []string, abis []string, bin
 // downloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory.
 func downloadFile(filepath string, url string) error {
-
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -220,14 +250,14 @@ func downloadFile(filepath string, url string) error {
 }
 
 // downloadSolc will download @solcVersion of the Solc compiler to tmp/solc directory.
-func downloadSolc(solcVersion string) (string, error) {
+func downloadSolc(version string) (string, error) {
 	solcDir := filepath.Join("tmp", "solc")
 	if err := os.MkdirAll(solcDir, os.ModePerm); err != nil {
 		return "", err
 	}
-	solcPath := filepath.Join(solcDir, solcVersion)
+	solcPath := filepath.Join(solcDir, version)
 	if _, err := os.Stat(solcPath); os.IsNotExist(err) {
-		log.Println("downloading solc version", solcVersion)
+		log.Println("downloading solc version", version)
 
 		srcFile := ""
 		switch runtime.GOOS {
@@ -239,7 +269,7 @@ func downloadSolc(solcVersion string) (string, error) {
 			return "", errors.Errorf("unsuported OS:%v", runtime.GOOS)
 		}
 
-		err = downloadFile(solcPath, fmt.Sprintf("https://github.com/ethereum/solidity/releases/download/%s/"+srcFile, solcVersion))
+		err = downloadFile(solcPath, fmt.Sprintf("https://github.com/ethereum/solidity/releases/download/%s/%s", version, srcFile))
 		if err != nil {
 			return "", err
 		}
@@ -248,6 +278,45 @@ func downloadSolc(solcVersion string) (string, error) {
 		}
 	}
 	return solcPath, nil
+}
+
+// downloadVyper will download the downloadVyper.
+func downloadVyper(version string) (string, error) {
+	compilerDir := filepath.Join("tmp", "vyper")
+	if err := os.MkdirAll(compilerDir, os.ModePerm); err != nil {
+		return "", err
+	}
+	vyperPath := filepath.Join(compilerDir, version)
+	if _, err := os.Stat(vyperPath); os.IsNotExist(err) {
+		log.Println("downloading vyper version", version)
+
+		srcFile := ""
+		switch version {
+		case "v0.2.5":
+			srcFile = "0.2.5+commit.a0c561c"
+		case "v0.2.4":
+			srcFile = "0.2.4+commit.7949850"
+		default:
+			return "", errors.Errorf("unrecognized version:%v", version)
+		}
+		switch runtime.GOOS {
+		case "darwin":
+			srcFile = "vyper." + srcFile + ".darwin"
+		case "linux":
+			srcFile = "vyper." + srcFile + ".linux"
+		default:
+			return "", errors.Errorf("unsuported OS:%v", runtime.GOOS)
+		}
+
+		err = downloadFile(vyperPath, fmt.Sprintf("https://github.com/vyperlang/vyper/releases/download/%s/%s", version, srcFile))
+		if err != nil {
+			return "", err
+		}
+		if err := os.Chmod(vyperPath, os.ModePerm); err != nil {
+			return "", err
+		}
+	}
+	return vyperPath, nil
 }
 
 type MultiContract struct {

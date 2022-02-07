@@ -13,14 +13,14 @@ import (
 )
 
 type Cli struct {
-	Path        string            `required:"" type:"string" help:"the contract address or local file path"`
-	SolcVersion string            `type:"string" help:"the contract compiler version"`
-	Network     etherscan.Network `default:"rinkeby" help:"the network to connect to"`
-	Name        string            `required:"" type:"string" help:"the name for the downloaded contract"`
-	DownloadDst string            `optional:"" type:"string" help:"the destination folder for the downloaded contract"`
-	ObjectsDst  string            `optional:"" type:"string" help:"the destination folder for the all object generation"`
-	PkgDst      string            `optional:"" type:"string" help:"the destination folder for the golang binding package"`
-	PkgAliases  map[string]string `optional:"" type:"string:string" help:"alias for pgk bindings to use when there is a collision in the normalized names"`
+	Path            string            `required:"" type:"string" help:"the contract address or local file path"`
+	CompilerVersion string            `type:"string" help:"the contract compiler version"`
+	Network         etherscan.Network `default:"rinkeby" help:"the network to connect to"`
+	Name            string            `required:"" type:"string" help:"the name for the downloaded contract"`
+	DownloadDst     string            `optional:"" default:"/tmp" type:"string" help:"the destination folder for the downloaded contract"`
+	ObjectsDst      string            `optional:"" type:"string" help:"the destination folder for the all object generation"`
+	PkgDst          string            `optional:"" type:"string" help:"the destination folder for the golang binding package"`
+	PkgAliases      map[string]string `optional:"" type:"string:string" help:"alias for pgk bindings to use when there is a collision in the normalized names"`
 }
 
 func Run(cli *Cli) error {
@@ -36,9 +36,9 @@ func Run(cli *Cli) error {
 		if err != nil {
 			return errors.Wrap(err, "download contracts")
 		}
-		log.Printf("Downloaded contractX:%+v", filepath.Join(cli.DownloadDst, cli.Name))
+		log.Printf("Downloaded contract:%+v", filepath.Join(cli.DownloadDst, cli.Name))
 	} else {
-		compilerVer := cli.SolcVersion
+		compilerVer := cli.CompilerVersion
 		if compilerVer == "" {
 			compilerVer, err = ethereum.CompilerVersion(cli.Path)
 			if err != nil {

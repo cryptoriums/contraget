@@ -17,6 +17,10 @@ generate from a local contract
 ```
 go run cmd/contraget/contraget.go --path=testing/contract.sol --pkg-dst=pkg/contracts --name=test
 ```
+also supports vyper
+```
+go run cmd/contraget/contraget.go --path=testing/contract.vy --pkg-dst=pkg/contracts --name=test
+```
 
 ## Author
 [@krasi-georgiev](https://github.com/krasi-georgiev/).
