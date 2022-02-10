@@ -292,6 +292,10 @@ func downloadVyper(version string) (string, error) {
 
 		srcFile := ""
 		switch version {
+		case "v0.2.16":
+			srcFile = "0.2.16+commit.59e1bdd"
+		case "v0.2.6":
+			srcFile = "0.2.6+commit.35467d5"
 		case "v0.2.5":
 			srcFile = "0.2.5+commit.a0c561c"
 		case "v0.2.4":
