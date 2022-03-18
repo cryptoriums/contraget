@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -26,29 +25,26 @@ import (
 	"go.uber.org/multierr"
 )
 
-func DownloadContracts(network etherscan.Network, address string, dstFolder, name string) (map[string]string, error) {
+func DownloadContracts(network etherscan.Network, address string, dstPath string) (map[string]string, error) {
 	client := etherscan.New(network, "")
 	rep, err := client.ContractSource(address)
 	if err != nil {
 		return nil, errors.Wrap(err, "get contract source")
 	}
 
-	name = strings.Title(name)
-	dstPath := path.Join(dstFolder, name)
-
 	if _, err := os.Stat(dstPath); !os.IsNotExist(err) {
 		os.RemoveAll(dstPath)
 	}
-	if err := os.MkdirAll(dstFolder, os.ModePerm); err != nil {
-		return nil, errors.Wrapf(err, "create download folder:%v", dstFolder)
+	if err := os.MkdirAll(dstPath, os.ModePerm); err != nil {
+		return nil, errors.Wrapf(err, "create download folder:%v", dstPath)
 	}
 
 	var contractFiles = make(map[string]string)
 
-	if codes, ok := isMultiContract(rep[0].SourceCode); ok {
-		for filePath := range codes {
-			content := codes[filePath].Content
-			filePath := filepath.Join(dstFolder, filepath.Base(filePath))
+	if srcCodes, ok := isMultiContract(rep[0].SourceCode); ok {
+		for filePath := range srcCodes {
+			content := srcCodes[filePath].Content
+			filePath := filepath.Join(dstPath, filepath.Base(filePath))
 			if err := write(filePath, content); err != nil {
 				return nil, err
 			}
@@ -56,13 +52,21 @@ func DownloadContracts(network etherscan.Network, address string, dstFolder, nam
 		}
 	} else {
 		if strings.Contains(rep[0].CompilerVersion, "vyper") {
-			filePath := filepath.Join(dstFolder, name+".vy")
+			contractName, err := stringInBetween(rep[0].SourceCode, "@title", "@author")
+			if err != nil {
+				return nil, errors.Wrap(err, "getting contract name")
+			}
+			filePath := filepath.Join(dstPath, contractName+".vy")
 			if err := write(filePath, rep[0].SourceCode); err != nil {
 				return nil, err
 			}
 			contractFiles[filePath] = "v" + strings.Split(rep[0].CompilerVersion, ":")[1]
 		} else {
-			filePath := filepath.Join(dstFolder, name+".sol")
+			contractName, err := stringInBetween(rep[0].SourceCode, "contract", "{")
+			if err != nil {
+				return nil, errors.Wrap(err, "getting contract name")
+			}
+			filePath := filepath.Join(dstPath, contractName+".sol")
 			if err := write(filePath, rep[0].SourceCode); err != nil {
 				return nil, err
 			}
@@ -166,7 +170,8 @@ func GetContractObjects(contractFiles map[string]string) (types []string, abis [
 	return types, abis, bins, sigs, libs, nil
 }
 
-func ExportABI(folder, filename string, abis []string) error {
+func ExportABI(folder string, abis []string) error {
+	filename := filepath.Base(folder)
 	var a []byte
 	for _, abi := range abis {
 		if len(abi) > 2 {
@@ -201,20 +206,20 @@ func ExportBin(folder string, types, bins []string) error {
 	return nil
 }
 
-func ExportPackage(pkgFolder, pkgName string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, aliases map[string]string) error {
+func ExportPackage(pkgFolder string, types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, aliases map[string]string) error {
+	pkgName := filepath.Base(pkgFolder)
 	code, err := bind.Bind(types, abis, bins, sigs, pkgName, bind.LangGo, libs, aliases)
 	if err != nil {
 		return errors.Wrapf(err, "generate the Go wrapper:%v", pkgName)
 	}
-	pkgFolderName := filepath.Join(pkgFolder, pkgName)
 
-	pkgPath := filepath.Join(pkgFolderName, pkgName+".go")
+	pkgPath := filepath.Join(pkgFolder, pkgName+".go")
 
-	if _, err := os.Stat(pkgFolderName); !os.IsNotExist(err) {
-		os.RemoveAll(pkgFolderName)
+	if _, err := os.Stat(pkgFolder); !os.IsNotExist(err) {
+		os.RemoveAll(pkgFolder)
 	}
-	if err := os.MkdirAll(pkgFolderName, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "create destination folder:%v", pkgFolderName)
+	if err := os.MkdirAll(pkgFolder, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "create destination folder:%v", pkgFolder)
 	}
 
 	if err := ioutil.WriteFile(pkgPath, []byte(code), os.ModePerm); err != nil {
@@ -330,6 +335,20 @@ type MultiContract struct {
 
 type Src struct {
 	Content string
+}
+
+func stringInBetween(src, keywordStart, keywordEnd string) (string, error) {
+	s := strings.Index(src, keywordStart)
+	if s == -1 {
+		return "", errors.New(keywordStart + " keyword not found")
+	}
+	s += len(keywordStart)
+	e := strings.Index(src, keywordEnd)
+	if e == -1 {
+		return "", errors.New(keywordEnd + " keyword not found")
+	}
+	fmt.Println("s", s, e)
+	return strings.TrimSpace(src[s : e-1]), nil
 }
 
 func isMultiContract(s string) (map[string]Src, bool) {

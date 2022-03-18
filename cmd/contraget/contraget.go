@@ -42,6 +42,6 @@ func main() {
 	_ = kong.Parse(cliI, kong.UsageOnError(), kong.TypeMapper(reflect.TypeOf(etherscan.Network("")), networkDecoder()))
 
 	if err := cli.Run(cliI); err != nil {
-		stdlog.Fatalf("root execution name:%v, error:%+v", cliI.Name, err)
+		stdlog.Fatalf("root execution path:%v, error:%+v", cliI.Path, err)
 	}
 }

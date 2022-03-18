@@ -11,15 +11,15 @@
 
 download from etherscan
 ```
-go run cmd/contraget/contraget.go --path=0x34319564f00C924dA8fB52fD8bA6edBfd1FfEdA8 --download-dst=tmp --pkg-dst=pkg/contracts --network=goerli --name=tellorTest
+go run cmd/contraget/contraget.go --path=0x34319564f00C924dA8fB52fD8bA6edBfd1FfEdA8 --download-dst=tmp/tellorTest --pkg-dst=pkg/contracts/tellor_test --network=goerli
 ```
 generate from a local contract
 ```
-go run cmd/contraget/contraget.go --path=testing/contract.sol --pkg-dst=pkg/contracts --name=test
+go run cmd/contraget/contraget.go --path=testing/contract.sol --pkg-dst=pkg/contracts/test
 ```
 also supports vyper
 ```
-go run cmd/contraget/contraget.go --path=testing/contract.vy --pkg-dst=pkg/contracts --name=test
+go run cmd/contraget/contraget.go --path=testing/contract.vy --pkg-dst=pkg/contracts/test
 ```
 
 ## Author
