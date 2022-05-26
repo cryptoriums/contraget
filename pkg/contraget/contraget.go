@@ -16,9 +16,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/cryptoriums/contraget/pkg/compiler"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/pkg/errors"
@@ -115,7 +115,7 @@ func write(filePath, content string) (errFinal error) {
 	return nil
 }
 
-func GetContractObjects(contractFiles map[string]string) (types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, err error) {
+func GetContractObjects(contractFiles map[string]string, compilerArgs []string) (types []string, abis []string, bins []string, sigs []map[string]string, libs map[string]string, err error) {
 	libs = make(map[string]string)
 	for contractPath, compilerVersion := range contractFiles {
 		var contracts map[string]*compiler.Contract
@@ -124,7 +124,7 @@ func GetContractObjects(contractFiles map[string]string) (types []string, abis [
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrap(err, "download solc")
 			}
-			contracts, err = compiler.CompileSolidity(compilerPath, contractPath)
+			contracts, err = compiler.CompileSolidity(compilerPath, []string{contractPath}, compilerArgs)
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrap(err, "build Solidity contract")
 			}
@@ -133,7 +133,7 @@ func GetContractObjects(contractFiles map[string]string) (types []string, abis [
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrap(err, "download solc")
 			}
-			output, err := compiler.CompileVyper(compilerPath, contractPath)
+			output, err := compiler.CompileVyper(compilerPath, []string{contractPath}, compilerArgs)
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrap(err, "build Vyper contract")
 			}

@@ -20,6 +20,7 @@ type Cli struct {
 	ObjectsDst      string            `optional:"" type:"string" help:"the destination folder for the all object generation"`
 	PkgDst          string            `optional:"" type:"string" help:"the destination folder for the golang binding package"`
 	PkgAliases      map[string]string `optional:"" type:"string:string" help:"alias for pgk bindings to use when there is a collision in the normalized names"`
+	CompilerArgs    []string          `optional:"" sep:";" help:"custom compiler arguments"`
 }
 
 func Run(cli *Cli) error {
@@ -55,7 +56,7 @@ func Run(cli *Cli) error {
 	}
 
 	if cli.PkgDst != "" {
-		types, abis, bins, sigs, libs, err := contraget.GetContractObjects(filePaths)
+		types, abis, bins, sigs, libs, err := contraget.GetContractObjects(filePaths, cli.CompilerArgs)
 		if err != nil {
 			return errors.Wrap(err, "get contracts object")
 		}
@@ -70,7 +71,7 @@ func Run(cli *Cli) error {
 	}
 
 	if cli.ObjectsDst != "" {
-		types, abis, bins, _, _, err := contraget.GetContractObjects(filePaths)
+		types, abis, bins, _, _, err := contraget.GetContractObjects(filePaths, cli.CompilerArgs)
 		if err != nil {
 			return errors.Wrap(err, "get contracts object")
 		}
