@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cryptoriums/contraget/pkg/contraget"
-	"github.com/cryptoriums/packages/ethereum"
+	"github.com/cryptoriums/packages/compiler"
+	etherscan_p "github.com/cryptoriums/packages/etherscan"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/pkg/errors"
@@ -32,7 +32,7 @@ func Run(cli *Cli) error {
 			return errors.New("contract path is not a hex string")
 		}
 
-		filePaths, err = contraget.DownloadContracts(cli.Network, cli.Path, cli.DownloadDst)
+		filePaths, err = etherscan_p.DownloadContracts(cli.Network, cli.Path, cli.DownloadDst)
 		if err != nil {
 			return errors.Wrap(err, "download contracts")
 		}
@@ -40,7 +40,7 @@ func Run(cli *Cli) error {
 	} else {
 		compilerVer := cli.CompilerVersion
 		if compilerVer == "" {
-			compilerVer, err = ethereum.CompilerVersion(cli.Path)
+			compilerVer, err = compiler.CompilerVersion(cli.Path)
 			if err != nil {
 				return errors.Wrap(err, "get contracts compiler version")
 			}
@@ -56,12 +56,12 @@ func Run(cli *Cli) error {
 	}
 
 	if cli.PkgDst != "" {
-		types, abis, bins, sigs, libs, err := contraget.GetContractObjects(filePaths, cli.CompilerArgs)
+		types, abis, bins, sigs, libs, err := compiler.GetContractObjects(filePaths, cli.CompilerArgs)
 		if err != nil {
 			return errors.Wrap(err, "get contracts object")
 		}
 
-		err = contraget.ExportPackage(cli.PkgDst, types, abis, bins, sigs, libs, cli.PkgAliases)
+		err = compiler.ExportPackage(cli.PkgDst, types, abis, bins, sigs, libs, cli.PkgAliases)
 		if err != nil {
 			return errors.Wrap(err, "generate GO binding")
 		}
@@ -71,17 +71,17 @@ func Run(cli *Cli) error {
 	}
 
 	if cli.ObjectsDst != "" {
-		types, abis, bins, _, _, err := contraget.GetContractObjects(filePaths, cli.CompilerArgs)
+		types, abis, bins, _, _, err := compiler.GetContractObjects(filePaths, cli.CompilerArgs)
 		if err != nil {
 			return errors.Wrap(err, "get contracts object")
 		}
-		err = contraget.ExportABI(cli.ObjectsDst, abis)
+		err = compiler.ExportABI(cli.ObjectsDst, abis)
 		if err != nil {
 			return errors.Wrap(err, "Export ABI")
 		}
 		log.Println("Exportd ABI:", cli.ObjectsDst)
 
-		err = contraget.ExportBin(cli.ObjectsDst, types, bins)
+		err = compiler.ExportBin(cli.ObjectsDst, types, bins)
 		if err != nil {
 			return errors.Wrap(err, "Export Bins")
 		}

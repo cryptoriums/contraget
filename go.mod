@@ -8,5 +8,4 @@ require (
 	github.com/ethereum/go-ethereum v1.10.19-0.20220526072637-0287e1a7c00c
 	github.com/nanmu42/etherscan-api v1.6.0
 	github.com/pkg/errors v0.9.1
-	go.uber.org/multierr v1.7.0
 )
