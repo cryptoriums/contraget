@@ -79,25 +79,33 @@ else
 	@echo >&2 "No git binary found."; exit 1
 endif
 
+.PHONY:lint
+lint: ## Runs various static analysis against our code.
+lint: go-lint shell-lint
+	@echo ">> detecting white noise"
+	@find . -type f \( -name "*.md" -o -name "*.go" \) | SED_BIN="$(SED)" xargs scripts/cleanup-white-noise.sh
+	$(call require_clean_work_tree,'detected white noise, run make lint and commit changes')
+
 # PROTIP:
 # Add
 #      --cpu-profile-path string   Path to CPU profile output file
 #      --mem-profile-path string   Path to memory profile output file
 # to debug big allocations during linting.
-lint: ## Runs various static analysis against our code.
-lint: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL) format check-git deps
-	$(call require_clean_work_tree,"detected not clean master before running lint")
+.PHONY: go-lint
+go-lint: check-git deps
 	@echo ">> verifying modules being imported"
-	@$(FAILLINT) -paths "errors=github.com/pkg/errors" ./...
-	@$(FAILLINT) -paths "fmt.{Print,Printf,Println,Sprint}" -ignore-tests ./...
-	@echo ">> examining all Go files"
-	@go vet -stdmethods=false ./...
+	@faillint -paths "errors=github.com/pkg/errors" ./...
+	@faillint -paths "fmt.{Print,Printf,Println,Sprint}" -ignore-tests ./...
 	@echo ">> linting all of the Go files GOGC=${GOGC}"
-	@$(GOLANGCI_LINT) run
+	@golangci-lint run
 	@echo ">> detecting misspells"
-	@find . -type f | grep -v vendor/ | grep -vE '\./\..*' | xargs $(MISSPELL) -error
-	@echo ">> detecting white noise"
-	@find . -type f \( -name "*.md" -o -name "*.go" \) | SED_BIN="$(SED)" xargs scripts/cleanup-white-noise.sh
+	@find . -type f | grep -v tmp | grep -v node_modules | grep -v contracts | grep -v go.sum | grep -vE '\./\..*' | xargs misspell -error
 	@echo ">> ensuring Copyright headers"
 	@go run ./scripts/copyright
-	$(call require_clean_work_tree,"detected white noise or/and files without copyright; run 'make lint' file and commit changes.")
+	$(call require_clean_work_tree,'detected file changes, run make lint and commit changes')
+
+.PHONY:shell-lint
+shell-lint: $(SHELLCHECK)
+	@echo ">> linting all of the shell script files"
+	@$(SHELLCHECK) --severity=error -o all -s bash $(shell find . -type f -name "*.sh" -not -path "*vendor*" -not -path "tmp/*" -not -path "*node_modules*")
+
