@@ -1,4 +1,3 @@
-include .bingo/Variables.mk
 FILES_TO_FMT	?= $(shell find . -name '*.go' -print)
 
 GO111MODULE 	?= on
@@ -103,9 +102,4 @@ go-lint: check-git deps
 	@echo ">> ensuring Copyright headers"
 	@go run ./scripts/copyright
 	$(call require_clean_work_tree,'detected file changes, run make lint and commit changes')
-
-.PHONY:shell-lint
-shell-lint: $(SHELLCHECK)
-	@echo ">> linting all of the shell script files"
-	@$(SHELLCHECK) --severity=error -o all -s bash $(shell find . -type f -name "*.sh" -not -path "*vendor*" -not -path "tmp/*" -not -path "*node_modules*")
 
