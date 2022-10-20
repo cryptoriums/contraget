@@ -6,7 +6,6 @@ package cli
 import (
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/cryptoriums/packages/compiler"
 	etherscan_p "github.com/cryptoriums/packages/etherscan"
@@ -39,7 +38,7 @@ func Run(cli *Cli) error {
 		if err != nil {
 			return errors.Wrap(err, "download contracts")
 		}
-		log.Printf("Downloaded contract:%+v", filepath.Join(cli.DownloadDst))
+		log.Printf("Downloaded contract:%v to:%+v", cli.Path, cli.DownloadDst)
 	} else {
 		compilerVer := cli.CompilerVersion
 		if compilerVer == "" {
